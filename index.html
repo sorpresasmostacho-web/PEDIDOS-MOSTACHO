@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sorpresas Mostacho — Hacer Pedido</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --gold:    #C9963A;
+    --gold-lt: #F5E6C8;
+    --dark:    #1A1208;
+    --mid:     #4A3820;
+    --cream:   #FBF7F0;
+    --white:   #FFFFFF;
+    --gray:    #E8E0D4;
+    --success: #2D6A4F;
+    --radius:  14px;
+    --shadow:  0 2px 16px rgba(26,18,8,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+    padding-bottom: 120px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--dark);
+    padding: 20px 20px 16px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+  }
+  header p { font-size: 12px; color: #A89070; margin-top: 2px; }
+
+  /* PASO INDICATOR */
+  .pasos {
+    display: flex;
+    gap: 0;
+    background: var(--dark);
+    padding: 0 20px 16px;
+  }
+  .paso {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: #5A4A35;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #2A1E10;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .paso.activo { color: var(--gold); border-bottom-color: var(--gold); }
+  .paso.done   { color: #7A6040; border-bottom-color: #4A3010; }
+
+  /* SECCIONES */
+  .seccion { display: none; padding: 20px; }
+  .seccion.activa { display: block; }
+
+  /* DATOS CLIENTE */
+  .campo-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mid);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  .campo-label:first-child { margin-top: 0; }
+  input, textarea, select {
+    width: 100%;
+    border: 1.5px solid var(--gray);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    background: var(--white);
+    color: var(--dark);
+    outline: none;
+    transition: border 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--gold);
+  }
+  textarea { resize: none; height: 80px; }
+
+  /* CATEGORÍAS */
+  .cats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .cat-btn {
+    background: var(--white);
+    border: 2px solid var(--gray);
+    border-radius: var(--radius);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cat-btn .emoji { font-size: 24px; display: block; margin-bottom: 6px; }
+  .cat-btn .nombre { font-size: 13px; font-weight: 600; color: var(--dark); display: block; }
+  .cat-btn .sub    { font-size: 11px; color: #8A7A65; display: block; margin-top: 2px; }
+  .cat-btn.seleccionada {
+    border-color: var(--gold);
+    background: var(--gold-lt);
+  }
+  .cat-btn.seleccionada .nombre { color: var(--mid); }
+
+  /* REFERENCIAS */
+  .seccion-titulo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--dark);
+    margin-bottom: 4px;
+  }
+  .seccion-sub { font-size: 13px; color: #8A7A65; margin-bottom: 16px; }
+
+  .refs-lista { display: flex; flex-direction: column; gap: 10px; }
+
+  .ref-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow);
+    border: 1.5px solid transparent;
+    transition: border 0.2s;
+  }
+  .ref-card.con-cantidad { border-color: var(--gold); }
+
+  .ref-img {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    background: var(--gold-lt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .ref-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+
+  .ref-info { flex: 1; min-width: 0; }
+  .ref-codigo { font-size: 11px; font-weight: 600; color: var(--gold); letter-spacing: 0.5px; }
+  .ref-nombre { font-size: 14px; font-weight: 500; color: var(--dark); margin-top: 1px; }
+
+  .cantidad-ctrl {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .qty-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gray);
+    background: var(--white);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--mid);
+    font-weight: 300;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .qty-btn:active { background: var(--gold-lt); border-color: var(--gold); }
+  .qty-num {
+    min-width: 24px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  /* BLONDAS */
+  .blonda-grupo {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+  .blonda-titulo {
+    font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .blonda-titulo .tag {
+    font-size: 10px; font-weight: 600; color: var(--gold);
+    background: var(--gold-lt); padding: 2px 7px; border-radius: 20px;
+  }
+  .tallas-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .talla-item { text-align: center; }
+  .talla-label { font-size: 11px; color: #8A7A65; margin-bottom: 4px; }
+  .talla-input {
+    width: 100%; padding: 8px 4px; text-align: center;
+    border: 1.5px solid var(--gray); border-radius: 10px;
+    font-size: 14px; font-weight: 600;
+  }
+  .talla-input:focus { border-color: var(--gold); }
+
+  /* MATERIAL BADGE */
+  .material-opts {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+  }
+  .mat-opt {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--gray);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    background: var(--white);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mat-opt.sel { background: var(--gold-lt); border-color: var(--gold); color: var(--mid); }
+
+  /* RESUMEN */
+  .resumen-bloque {
+    background: var(--white); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow);
+  }
+  .resumen-titulo { font-size: 13px; font-weight: 600; color: var(--mid); margin-bottom: 10px; }
+  .resumen-item {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 6px 0; border-bottom: 1px solid var(--gray); font-size: 13px;
+  }
+  .resumen-item:last-child { border-bottom: none; }
+  .resumen-item .cant { font-weight: 600; color: var(--gold); margin-right: 8px; }
+  .resumen-vacio { font-size: 13px; color: #B0A090; text-align: center; padding: 10px 0; }
+
+  /* NOTAS */
+  .notas-label { font-size: 12px; color: #8A7A65; margin: 12px 0 6px; }
+
+  /* BOTONES NAVEGACIÓN */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    padding: 12px 20px 20px;
+    box-shadow: 0 -2px 16px rgba(26,18,8,0.10);
+    display: flex; gap: 10px;
+  }
+  .btn-sec {
+    flex: 1; padding: 14px; border-radius: var(--radius);
+    border: 1.5px solid var(--gray);
+    background: var(--white); color: var(--mid);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-pri {
+    flex: 2; padding: 14px; border-radius: var(--radius);
+    border: none; background: var(--gold); color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(201,150,58,0.35);
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s;
+  }
+  .btn-pri:active { opacity: 0.85; }
+  .btn-pri:disabled { background: #C0B090; box-shadow: none; cursor: not-allowed; }
+
+  /* ÉXITO */
+  .exito {
+    text-align: center; padding: 40px 20px;
+  }
+  .exito .icono { font-size: 64px; margin-bottom: 16px; }
+  .exito h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px; color: var(--dark); margin-bottom: 8px;
+  }
+  .exito p { font-size: 14px; color: #8A7A65; line-height: 1.6; }
+
+  .badge-contador {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--gold); color: white;
+    border-radius: 50%; width: 18px; height: 18px;
+    font-size: 10px; font-weight: 700;
+    margin-left: 4px;
+  }
+
+  .separador { height: 1px; background: var(--gray); margin: 16px 0; }
+  .tip { font-size: 12px; color: #A09080; background: var(--gold-lt); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎂 Sorpresas Mostacho</h1>
+  <p>Completa tu pedido paso a paso</p>
+</header>
+
+<div class="pasos">
+  <div class="paso activo" id="paso-1" onclick="irAPaso(1)">① Datos</div>
+  <div class="paso" id="paso-2" onclick="irAPaso(2)">② Productos</div>
+  <div class="paso" id="paso-3" onclick="irAPaso(3)">③ Resumen</div>
+</div>
+
+<!-- ─── PASO 1: DATOS DEL CLIENTE ─── -->
+<div class="seccion activa" id="sec-1">
+  <div class="campo-label">Tu nombre</div>
+  <input type="text" id="nombre" placeholder="Nombre o negocio" autocomplete="off">
+
+  <div class="campo-label">WhatsApp</div>
+  <input type="tel" id="telefono" placeholder="Número de WhatsApp" autocomplete="off">
+
+  <div class="campo-label">Ciudad</div>
+  <input type="text" id="ciudad" placeholder="¿Dónde te enviamos?" autocomplete="off">
+</div>
+
+<!-- ─── PASO 2: PRODUCTOS ─── -->
+<div class="seccion" id="sec-2">
+  <p class="tip">Selecciona una o más categorías y agrega las cantidades que necesitas.</p>
+
+  <div class="cats-grid" id="cats-grid"></div>
+
+  <div id="area-productos" style="margin-top:20px;"></div>
+</div>
+
+<!-- ─── PASO 3: RESUMEN ─── -->
+<div class="seccion" id="sec-3">
+  <p class="seccion-titulo">Tu pedido</p>
+  <p class="seccion-sub" style="margin-bottom:16px">Revisa antes de confirmar</p>
+
+  <div class="resumen-bloque">
+    <div class="resumen-titulo">📋 DATOS</div>
+    <div id="res-datos"></div>
+  </div>
+
+  <div class="resumen-bloque">
+    <div class="resumen-titulo">📦 PRODUCTOS</div>
+    <div id="res-productos"></div>
+  </div>
+
+  <p class="notas-label">Notas adicionales (opcional)</p>
+  <textarea id="notas" placeholder="Ej: necesito entrega urgente, color especial, etc."></textarea>
+</div>
+
+<!-- ─── ÉXITO ─── -->
+<div class="seccion" id="sec-exito">
+  <div class="exito">
+    <div class="icono">🎉</div>
+    <h2>¡Pedido enviado!</h2>
+    <p>Recibimos tu pedido correctamente.<br>En breve te confirmamos por WhatsApp.</p>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<div class="nav-bar" id="nav-bar">
+  <button class="btn-sec" id="btn-atras" onclick="navegarAtras()" style="display:none">Atrás</button>
+  <button class="btn-pri" id="btn-siguiente" onclick="navegarSiguiente()">Continuar →</button>
+</div>
+
+<script>
+// ═══════════════════════════════
+// DATOS DEL CATÁLOGO
+// ═══════════════════════════════
+const CATEGORIAS = [
+  { id: 'cumple',    emoji: '🎂', nombre: 'Cumpleaños',       sub: 'Toppers' },
+  { id: 'happy',     emoji: '🎉', nombre: 'Happy Birthday',   sub: 'Toppers' },
+  { id: 'matri',     emoji: '💍', nombre: 'Matrimonio',       sub: 'Toppers' },
+  { id: 'quince',    emoji: '👑', nombre: '15 Años',          sub: 'Toppers' },
+  { id: 'cincuenta', emoji: '🥂', nombre: '50 Años',          sub: 'Toppers' },
+  { id: 'comuni',    emoji: '✝️',  nombre: '1a Comunión',      sub: 'Toppers' },
+  { id: 'bautizo',   emoji: '🕊️', nombre: 'Bautizo',          sub: 'Toppers' },
+  { id: 'grado',     emoji: '🎓', nombre: 'Grado',            sub: 'Toppers' },
+  { id: 'monedas',   emoji: '🪙', nombre: 'Moneditas',        sub: 'Todas las categorías' },
+  { id: 'blondas',   emoji: '⬜', nombre: 'Blondas',          sub: 'Circular · Cuadrada' },
+];
+
+// Referencias por categoría (10 por categoría de toppers)
+// En producción reemplaza los emojis por rutas de imágenes reales
+const REFS = {
+  cumple: [
+    { cod:'TOP_001', nom:'Feliz Cumpleaños Clásico' },
+    { cod:'TOP_002', nom:'Feliz Cumpleaños Script' },
+    { cod:'TOP_003', nom:'Cumpleaños Stars' },
+    { cod:'TOP_004', nom:'Feliz Cumple Balloon' },
+    { cod:'TOP_005', nom:'Happy Bday Floral' },
+    { cod:'TOP_006', nom:'Cumpleaños Corona' },
+    { cod:'TOP_007', nom:'Feliz Cumpleaños Arco' },
+    { cod:'TOP_008', nom:'Cumpleaños Mariposa' },
+    { cod:'TOP_009', nom:'Feliz Cumple Corazones' },
+    { cod:'TOP_010', nom:'Cumpleaños Vintage' },
+  ],
+  happy: [
+    { cod:'TOP_011', nom:'Happy Birthday Simple' },
+    { cod:'TOP_012', nom:'Happy Birthday Cursive' },
+    { cod:'TOP_013', nom:'Happy Birthday Stars' },
+    { cod:'TOP_014', nom:'Happy Birthday Balloon' },
+    { cod:'TOP_015', nom:'Happy Birthday Floral' },
+    { cod:'TOP_016', nom:'Happy Birthday Crown' },
+    { cod:'TOP_017', nom:'Happy Birthday Arch' },
+    { cod:'TOP_018', nom:'Happy Birthday Butterfly' },
+    { cod:'TOP_019', nom:'Happy Birthday Hearts' },
+    { cod:'TOP_020', nom:'Happy Birthday Vintage' },
+  ],
+  matri: [
+    { cod:'TOP_021', nom:'Mr & Mrs Clásico' },
+    { cod:'TOP_022', nom:'Mr & Mrs Script' },
+    { cod:'TOP_023', nom:'Amor Eterno' },
+    { cod:'TOP_024', nom:'Felices Para Siempre' },
+    { cod:'TOP_025', nom:'Wedding Floral' },
+    { cod:'TOP_026', nom:'Just Married' },
+    { cod:'TOP_027', nom:'Wedding Arch' },
+    { cod:'TOP_028', nom:'Wedding Hearts' },
+    { cod:'TOP_029', nom:'Wedding Rings' },
+    { cod:'TOP_030', nom:'Wedding Vintage' },
+  ],
+  quince: [
+    { cod:'TOP_031', nom:'15 Años Corona' },
+    { cod:'TOP_032', nom:'Quinceañera Script' },
+    { cod:'TOP_033', nom:'15 Años Floral' },
+    { cod:'TOP_034', nom:'Mis 15 Balloon' },
+    { cod:'TOP_035', nom:'Quinceañera Stars' },
+    { cod:'TOP_036', nom:'15 Años Mariposa' },
+    { cod:'TOP_037', nom:'Quinceañera Arco' },
+    { cod:'TOP_038', nom:'15 Años Corazones' },
+    { cod:'TOP_039', nom:'Quinceañera Vintage' },
+    { cod:'TOP_040', nom:'15 Años Clásico' },
+  ],
+  cincuenta: [
+    { cod:'TOP_041', nom:'50 Años Clásico' },
+    { cod:'TOP_042', nom:'50 Años Script' },
+    { cod:'TOP_043', nom:'50 Años Stars' },
+    { cod:'TOP_044', nom:'50 Años Balloon' },
+    { cod:'TOP_045', nom:'50 Años Floral' },
+    { cod:'TOP_046', nom:'50 Años Corona' },
+    { cod:'TOP_047', nom:'50 Años Arco' },
+    { cod:'TOP_048', nom:'50 Años Mariposa' },
+    { cod:'TOP_049', nom:'50 Años Corazones' },
+    { cod:'TOP_050', nom:'50 Años Vintage' },
+  ],
+  comuni: [
+    { cod:'TOP_051', nom:'1a Comunión Cruz' },
+    { cod:'TOP_052', nom:'Comunión Script' },
+    { cod:'TOP_053', nom:'Comunión Paloma' },
+    { cod:'TOP_054', nom:'Comunión Floral' },
+    { cod:'TOP_055', nom:'Comunión Stars' },
+    { cod:'TOP_056', nom:'Comunión Cáliz' },
+    { cod:'TOP_057', nom:'Comunión Arco' },
+    { cod:'TOP_058', nom:'Comunión Corazones' },
+    { cod:'TOP_059', nom:'Comunión Vintage' },
+    { cod:'TOP_060', nom:'Comunión Clásico' },
+  ],
+  bautizo: [
+    { cod:'TOP_061', nom:'Bautizo Paloma' },
+    { cod:'TOP_062', nom:'Bautizo Script' },
+    { cod:'TOP_063', nom:'Bautizo Floral' },
+    { cod:'TOP_064', nom:'Bautizo Stars' },
+    { cod:'TOP_065', nom:'Bautizo Cruz' },
+    { cod:'TOP_066', nom:'Bautizo Corona' },
+    { cod:'TOP_067', nom:'Bautizo Arco' },
+    { cod:'TOP_068', nom:'Bautizo Mariposa' },
+    { cod:'TOP_069', nom:'Bautizo Corazones' },
+    { cod:'TOP_070', nom:'Bautizo Vintage' },
+  ],
+  grado: [
+    { cod:'TOP_071', nom:'Graduación Birrete' },
+    { cod:'TOP_072', nom:'Graduación Script' },
+    { cod:'TOP_073', nom:'Graduación Stars' },
+    { cod:'TOP_074', nom:'Graduación Balloon' },
+    { cod:'TOP_075', nom:'Graduación Floral' },
+    { cod:'TOP_076', nom:'Graduación Corona' },
+    { cod:'TOP_077', nom:'Graduación Arco' },
+    { cod:'TOP_078', nom:'Graduación Mariposa' },
+    { cod:'TOP_079', nom:'Graduación Corazones' },
+    { cod:'TOP_080', nom:'Graduación Vintage' },
+  ],
+  monedas: [
+    { cod:'MON_001', nom:'Feliz Cumpleaños' },
+    { cod:'MON_002', nom:'Happy Birthday' },
+    { cod:'MON_003', nom:'Mr & Mrs' },
+    { cod:'MON_004', nom:'15 Años' },
+    { cod:'MON_005', nom:'50 Años' },
+    { cod:'MON_006', nom:'1a Comunión' },
+    { cod:'MON_007', nom:'Bautizo' },
+    { cod:'MON_008', nom:'Graduación' },
+    { cod:'MON_009', nom:'Baby Shower' },
+    { cod:'MON_010', nom:'Gracias' },
+  ],
+};
+
+// Material options para toppers
+const MATERIALES_TOPPER = ['MDF Dorado','MDF Negro','MDF Plateado','Acrílico Dorado','Acrílico Plateado'];
+
+// ═══════════════════════════════
+// ESTADO
+// ═══════════════════════════════
+let pasoActual = 1;
+let catsSeleccionadas = new Set();
+let cantidades = {}; // { 'TOP_001': 12, ... }
+let materialTopper = 'MDF Dorado';
+let blondasData = {}; // { 'circular-20': 12, 'cuadrada-25': 6, ... }
+
+// ═══════════════════════════════
+// RENDER CATEGORÍAS
+// ═══════════════════════════════
+function renderCats() {
+  const grid = document.getElementById('cats-grid');
+  grid.innerHTML = CATEGORIAS.map(c => `
+    <div class="cat-btn ${catsSeleccionadas.has(c.id) ? 'seleccionada' : ''}"
+         onclick="toggleCat('${c.id}')">
+      <span class="emoji">${c.emoji}</span>
+      <span class="nombre">${c.nombre}</span>
+      <span class="sub">${c.sub}</span>
+    </div>
+  `).join('');
+}
+
+function toggleCat(id) {
+  if (catsSeleccionadas.has(id)) {
+    catsSeleccionadas.delete(id);
+  } else {
+    catsSeleccionadas.add(id);
+  }
+  renderCats();
+  renderProductos();
+}
+
+// ═══════════════════════════════
+// RENDER PRODUCTOS
+// ═══════════════════════════════
+function renderProductos() {
+  const area = document.getElementById('area-productos');
+  if (catsSeleccionadas.size === 0) { area.innerHTML = ''; return; }
+
+  let html = '';
+
+  // Toppers / Moneditas
+  const catsCatalogo = [...catsSeleccionadas].filter(c => c !== 'blondas');
+  if (catsCatalogo.length > 0) {
+    // Material selector (aplica a todos los toppers)
+    html += `<p class="seccion-titulo" style="margin-bottom:4px">Material</p>
+    <div class="material-opts">
+      ${MATERIALES_TOPPER.map(m => `
+        <div class="mat-opt ${materialTopper===m?'sel':''}" onclick="selMaterial('${m}')">${m}</div>
+      `).join('')}
+    </div>
+    <div class="separador"></div>`;
+
+    catsCatalogo.forEach(catId => {
+      const cat = CATEGORIAS.find(c => c.id === catId);
+      const refs = REFS[catId] || [];
+      html += `<p class="seccion-titulo" style="margin-bottom:2px">${cat.emoji} ${cat.nombre}</p>
+      <p class="seccion-sub">${cat.sub}</p>
+      <div class="refs-lista">`;
+      refs.forEach(r => {
+        const qty = cantidades[r.cod] || 0;
+        html += `
+        <div class="ref-card ${qty>0?'con-cantidad':''}" id="card-${r.cod}">
+          <div class="ref-img">🎂</div>
+          <div class="ref-info">
+            <div class="ref-codigo">${r.cod}</div>
+            <div class="ref-nombre">${r.nom}</div>
+          </div>
+          <div class="cantidad-ctrl">
+            <button class="qty-btn" onclick="cambiarQty('${r.cod}',-12)">−</button>
+            <span class="qty-num" id="qty-${r.cod}">${qty||0}</span>
+            <button class="qty-btn" onclick="cambiarQty('${r.cod}',12)">+</button>
+          </div>
+        </div>`;
+      });
+      html += `</div><div class="separador"></div>`;
+    });
+  }
+
+  // Blondas
+  if (catsSeleccionadas.has('blondas')) {
+    html += renderBlondas();
+  }
+
+  area.innerHTML = html;
+}
+
+function selMaterial(m) {
+  materialTopper = m;
+  renderProductos();
+}
+
+function cambiarQty(cod, delta) {
+  const actual = cantidades[cod] || 0;
+  const nuevo = Math.max(0, actual + delta);
+  cantidades[cod] = nuevo;
+  // Update UI sin re-render completo
+  const el = document.getElementById('qty-' + cod);
+  const card = document.getElementById('card-' + cod);
+  if (el) el.textContent = nuevo;
+  if (card) card.classList.toggle('con-cantidad', nuevo > 0);
+}
+
+// ═══════════════════════════════
+// BLONDAS
+// ═══════════════════════════════
+const TALLAS_BLONDA = ['20','22','25','28','30','36','40'];
+const TIPOS_BLONDA = [
+  { id: 'circular-sinlogo',    nom: 'Circular SIN LOGO',   tag: '1 min/und' },
+  { id: 'circular-conlogo',    nom: 'Circular CON LOGO',   tag: '4 min/und' },
+  { id: 'cuadrada-sinlogo',    nom: 'Cuadrada SIN LOGO',   tag: '1 min/und' },
+  { id: 'cuadrada-conlogo',    nom: 'Cuadrada CON LOGO',   tag: '4 min/und' },
+  { id: 'circular-gruesa',     nom: 'Circular GRUESA 5mm', tag: 'MDF Blanco' },
+  { id: 'cuadrada-gruesa',     nom: 'Cuadrada GRUESA 5mm', tag: 'MDF Blanco' },
+];
+
+function renderBlondas() {
+  let html = `<p class="seccion-titulo">⬜ Blondas</p>
+  <p class="seccion-sub">Ingresa la cantidad por talla</p>`;
+
+  TIPOS_BLONDA.forEach(t => {
+    html += `<div class="blonda-grupo">
+      <div class="blonda-titulo">${t.nom} <span class="tag">${t.tag}</span></div>
+      <div class="tallas-grid">`;
+    TALLAS_BLONDA.forEach(talla => {
+      const key = t.id + '-' + talla;
+      const val = blondasData[key] || '';
+      html += `<div class="talla-item">
+        <div class="talla-label">${talla}cm</div>
+        <input class="talla-input" type="number" min="0" placeholder="0"
+          value="${val}"
+          oninput="blondasData['${key}']=parseInt(this.value)||0"
+          inputmode="numeric">
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  return html;
+}
+
+// ═══════════════════════════════
+// RESUMEN
+// ═══════════════════════════════
+function renderResumen() {
+  // Datos cliente
+  document.getElementById('res-datos').innerHTML = `
+    <div class="resumen-item"><span>Nombre</span><span><b>${document.getElementById('nombre').value || '—'}</b></span></div>
+    <div class="resumen-item"><span>WhatsApp</span><span>${document.getElementById('telefono').value || '—'}</span></div>
+    <div class="resumen-item"><span>Ciudad</span><span>${document.getElementById('ciudad').value || '—'}</span></div>
+  `;
+
+  // Productos
+  let items = [];
+
+  // Toppers / monedas
+  Object.entries(cantidades).forEach(([cod, qty]) => {
+    if (qty > 0) {
+      // Buscar nombre
+      let nom = cod;
+      for (const refs of Object.values(REFS)) {
+        const r = refs.find(x => x.cod === cod);
+        if (r) { nom = r.nom; break; }
+      }
+      items.push({ desc: `${cod} — ${nom} (${materialTopper})`, qty });
+    }
+  });
+
+  // Blondas
+  Object.entries(blondasData).forEach(([key, qty]) => {
+    if (qty > 0) {
+      const tipo = TIPOS_BLONDA.find(t => key.startsWith(t.id));
+      const talla = key.split('-').pop();
+      if (tipo) items.push({ desc: `${tipo.nom} ${talla}cm`, qty });
+    }
+  });
+
+  const resEl = document.getElementById('res-productos');
+  if (items.length === 0) {
+    resEl.innerHTML = '<p class="resumen-vacio">Sin productos agregados</p>';
+  } else {
+    resEl.innerHTML = items.map(i =>
+      `<div class="resumen-item">
+        <span><span class="cant">${i.qty}u</span>${i.desc}</span>
+      </div>`
+    ).join('');
+  }
+}
+
+// ═══════════════════════════════
+// ARMAR DESCRIPCIÓN PARA SHEETS
+// ═══════════════════════════════
+function armarDescripcion() {
+  let lineas = [];
+
+  Object.entries(cantidades).forEach(([cod, qty]) => {
+    if (qty > 0) {
+      let nom = cod;
+      for (const refs of Object.values(REFS)) {
+        const r = refs.find(x => x.cod === cod);
+        if (r) { nom = r.nom; break; }
+      }
+      lineas.push(`${cod} X${qty} UND ${materialTopper.toUpperCase()}`);
+    }
+  });
+
+  Object.entries(blondasData).forEach(([key, qty]) => {
+    if (qty > 0) {
+      const tipo = TIPOS_BLONDA.find(t => key.startsWith(t.id));
+      const talla = key.split('-').pop();
+      if (tipo) {
+        lineas.push(`BLONDA ${tipo.nom.toUpperCase()} ${talla}CM X${qty} UND`);
+      }
+    }
+  });
+
+  return lineas.join('\n');
+}
+
+// ═══════════════════════════════
+// ENVIAR A GOOGLE SHEETS
+// ═══════════════════════════════
+async function enviarPedido() {
+  const btn = document.getElementById('btn-siguiente');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  const descripcion = armarDescripcion();
+
+  // Construir URL con parámetros (evita problema CORS)
+  const params = new URLSearchParams();
+  params.append('nombre',      datosCliente.nombre   || '');
+  params.append('telefono',    datosCliente.telefono  || '');
+  params.append('ciudad',      datosCliente.ciudad    || '');
+  params.append('descripcion', descripcion);
+  params.append('material',    materialTopper);
+  params.append('notas',       document.getElementById('notas').value);
+
+  const SHEETS_URL = 'TU_GOOGLE_APPS_SCRIPT_URL_AQUI';
+
+  try {
+    await fetch(SHEETS_URL + '?' + params.toString(), {
+      method: 'GET',
+      mode: 'no-cors',
+    });
+    // Mostrar éxito
+    document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+    document.getElementById('sec-exito').classList.add('activa');
+    document.getElementById('nav-bar').style.display = 'none';
+    document.querySelector('.pasos').style.display = 'none';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar pedido';
+    alert('Error al enviar. Intenta de nuevo.');
+  }
+}
+
+// ═══════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════
+let datosCliente = {};
+
+function irAPaso(n) {
+  if (n > pasoActual) return; // solo retroceder tocando pasos
+  mostrarPaso(n);
+}
+
+function navegarSiguiente() {
+  if (pasoActual === 1) {
+    if (!validarDatos()) return;
+    // Guardar datos antes de ocultar el paso 1
+    datosCliente = {
+      nombre:   document.getElementById('nombre').value,
+      telefono: document.getElementById('telefono').value,
+      ciudad:   document.getElementById('ciudad').value,
+    };
+    mostrarPaso(2);
+  } else if (pasoActual === 2) {
+    mostrarPaso(3);
+    renderResumen();
+  } else if (pasoActual === 3) {
+    enviarPedido();
+  }
+}
+
+function navegarAtras() {
+  if (pasoActual > 1) mostrarPaso(pasoActual - 1);
+}
+
+function mostrarPaso(n) {
+  pasoActual = n;
+  document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+  document.getElementById('sec-' + n).classList.add('activa');
+
+  document.querySelectorAll('.paso').forEach((p, i) => {
+    p.classList.remove('activo','done');
+    if (i + 1 === n) p.classList.add('activo');
+    if (i + 1 < n)  p.classList.add('done');
+  });
+
+  const btnAtras    = document.getElementById('btn-atras');
+  const btnSig      = document.getElementById('btn-siguiente');
+  btnAtras.style.display = n > 1 ? '' : 'none';
+  btnSig.textContent = n === 3 ? '✓ Confirmar pedido' : 'Continuar →';
+
+  if (n === 2) renderProductos();
+  window.scrollTo(0, 0);
+}
+
+function validarDatos() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const tel    = document.getElementById('telefono').value.trim();
+  if (!nombre) { alert('Ingresa tu nombre'); return false; }
+  if (!tel)    { alert('Ingresa tu WhatsApp'); return false; }
+  return true;
+}
+
+// Init
+renderCats();
+</script>
+</body>
+</html>
