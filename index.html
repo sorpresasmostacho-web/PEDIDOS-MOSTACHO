@@ -731,14 +731,13 @@ async function enviarPedido() {
   const descripcion = armarDescripcion();
 
   // Construir URL con parámetros (evita problema CORS)
-  const params = new URLSearchParams({
-    nombre:      document.getElementById('nombre').value,
-    telefono:    document.getElementById('telefono').value,
-    ciudad:      document.getElementById('ciudad').value,
-    descripcion: descripcion,
-    material:    materialTopper,
-    notas:       document.getElementById('notas').value,
-  });
+ const params = new URLSearchParams();
+params.append('nombre',      document.getElementById('nombre').value);
+params.append('telefono',    document.getElementById('telefono').value);
+params.append('ciudad',      document.getElementById('ciudad').value);
+params.append('descripcion', descripcion);
+params.append('material',    materialTopper);
+params.append('notas',       document.getElementById('notas').value);
 
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyRmWDGaAIff8IdibGXSjxY3Ai-ZMSgunBvBri6--Tpm14oOT6f-WwYh4CAHPb196AB/exec';
 
