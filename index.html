@@ -739,7 +739,7 @@ async function enviarPedido() {
   params.append('material',    materialTopper);
   params.append('notas',       document.getElementById('notas').value);
 
-  const SHEETS_URL = 'TU_GOOGLE_APPS_SCRIPT_URL_AQUI';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyRmWDGaAIff8IdibGXSjxY3Ai-ZMSgunBvBri6--Tpm14oOT6f-WwYh4CAHPb196AB/exec';
 
   try {
     await fetch(SHEETS_URL + '?' + params.toString(), {
